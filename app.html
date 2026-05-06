@@ -771,6 +771,36 @@
     }
     .btn-del-cancel:hover { border-color: var(--border-active); color: var(--text); }
 
+    /* ===== 日付入力（ダークテーマ） ===== */
+    input[type="date"] {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 0.88rem;
+      font-family: inherit;
+      transition: border-color 0.2s;
+      outline: none;
+      color-scheme: dark;
+    }
+    input[type="date"]:focus { border-color: var(--border-active); }
+
+    /* カード内の日付バッジ */
+    .card-date {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.68rem;
+      color: #a78bfa;
+      background: rgba(167,139,250,0.1);
+      border: 1px solid rgba(167,139,250,0.25);
+      padding: 2px 7px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
     /* ===== URL確認ボタン ===== */
     .btn-check {
       flex-shrink: 0;
@@ -872,6 +902,10 @@
         <input type="text" id="f-title" placeholder="例：Claude Code 入門編">
       </div>
       <div class="form-group">
+        <label>講義日（任意）</label>
+        <input type="date" id="f-lecture-date">
+      </div>
+      <div class="form-group">
         <label>アーカイブURL</label>
         <div style="display:flex;gap:8px;align-items:center;">
           <input type="url" id="f-url" placeholder="https://..." oninput="updateCheckBtn()">
@@ -953,7 +987,10 @@ https://vimeo.com/xxx"></textarea>
         <option value="other">その他</option>
       </select>
       <select id="sortSelect" onchange="renderList()">
-        <option value="date">登録順</option>
+        <option value="date-desc">登録順（新しい順）</option>
+        <option value="date-asc">登録順（古い順）</option>
+        <option value="lecture-desc">講義日（新しい順）</option>
+        <option value="lecture-asc">講義日（古い順）</option>
         <option value="title">あいうえお順</option>
         <option value="instructor">講師順</option>
       </select>
@@ -986,6 +1023,10 @@ https://vimeo.com/xxx"></textarea>
     <div class="form-group">
       <label>講座名</label>
       <input type="text" id="e-title" placeholder="例：Claude Code 入門編">
+    </div>
+    <div class="form-group">
+      <label>講義日（任意）</label>
+      <input type="date" id="e-lecture-date">
     </div>
     <div class="form-group">
       <label>アーカイブURL</label>
@@ -1213,14 +1254,15 @@ function checkUrlMini(url, btnEl) {
 
 // ===== 手動追加 =====
 function addManual() {
-  const title      = document.getElementById('f-title').value.trim();
-  const instructor = getInstructor();
-  const url        = document.getElementById('f-url').value.trim();
-  const docUrl     = document.getElementById('f-doc-url').value.trim();
-  const pass       = document.getElementById('f-pass').value.trim();
-  const note       = document.getElementById('f-note').value.trim();
-  const audioUrl   = document.getElementById('f-audio-url').value.trim();
-  const summary    = document.getElementById('f-summary').value.trim();
+  const title       = document.getElementById('f-title').value.trim();
+  const instructor  = getInstructor();
+  const url         = document.getElementById('f-url').value.trim();
+  const docUrl      = document.getElementById('f-doc-url').value.trim();
+  const pass        = document.getElementById('f-pass').value.trim();
+  const note        = document.getElementById('f-note').value.trim();
+  const audioUrl    = document.getElementById('f-audio-url').value.trim();
+  const summary     = document.getElementById('f-summary').value.trim();
+  const lectureDate = document.getElementById('f-lecture-date').value;
 
   if (!title && !url) { showToast('⚠️ 講座名かURLを入力してください', '#f59e0b'); return; }
   const checkBtn = document.getElementById('checkBtn');
@@ -1231,14 +1273,14 @@ function addManual() {
   }
 
   const data = load();
-  data.unshift({ id: Date.now(), title, instructor, url, docUrl, pass, note, audioUrl, summary, platform: getPlatform(url), createdAt: new Date().toISOString() });
+  data.unshift({ id: Date.now(), title, instructor, url, docUrl, pass, note, audioUrl, summary, lectureDate, platform: getPlatform(url), createdAt: new Date().toISOString() });
   save(data);
   renderInstructorTabs();
   renderList();
   updateCount();
 
   // リセット
-  ['f-title','f-url','f-pass','f-note','f-audio-url','f-summary'].forEach(id => document.getElementById(id).value = '');
+  ['f-title','f-url','f-pass','f-note','f-audio-url','f-summary','f-lecture-date'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f-instructor-select').value = '';
   document.getElementById('f-instructor-manual').style.display = 'none';
   document.getElementById('f-instructor-manual').value = '';
@@ -1421,8 +1463,9 @@ function openEditModal(id) {
   document.getElementById('e-doc-url').value   = d.docUrl || '';
   document.getElementById('e-pass').value      = d.pass || '';
   document.getElementById('e-note').value      = d.note || '';
-  document.getElementById('e-audio-url').value = d.audioUrl || '';
-  document.getElementById('e-summary').value   = d.summary || '';
+  document.getElementById('e-audio-url').value    = d.audioUrl || '';
+  document.getElementById('e-summary').value      = d.summary || '';
+  document.getElementById('e-lecture-date').value = d.lectureDate || '';
 
   // 編集中IDを保存
   document.getElementById('modalOverlay').dataset.editId = id;
@@ -1464,8 +1507,9 @@ function saveEdit() {
     pass:       document.getElementById('e-pass').value.trim(),
     note:       document.getElementById('e-note').value.trim(),
     platform:   getPlatform(url),
-    audioUrl:   document.getElementById('e-audio-url').value.trim(),
-    summary:    document.getElementById('e-summary').value.trim(),
+    audioUrl:    document.getElementById('e-audio-url').value.trim(),
+    summary:     document.getElementById('e-summary').value.trim(),
+    lectureDate: document.getElementById('e-lecture-date').value,
   };
 
   save(data);
@@ -1531,9 +1575,20 @@ function renderList() {
 
   // 並び替え
   filtered.sort((a, b) => {
-    if (sort === 'title') return (a.title || '').localeCompare(b.title || '', 'ja');
-    if (sort === 'instructor') return (a.instructor || '').localeCompare(b.instructor || '', 'ja');
-    return b.id - a.id;
+    if (sort === 'title')        return (a.title || '').localeCompare(b.title || '', 'ja');
+    if (sort === 'instructor')   return (a.instructor || '').localeCompare(b.instructor || '', 'ja');
+    if (sort === 'date-asc')     return a.id - b.id;
+    if (sort === 'lecture-desc') {
+      const da = a.lectureDate || '0000-00-00';
+      const db = b.lectureDate || '0000-00-00';
+      return db.localeCompare(da); // 新しい順（日付なしは最後）
+    }
+    if (sort === 'lecture-asc') {
+      const da = a.lectureDate || '9999-99-99';
+      const db = b.lectureDate || '9999-99-99';
+      return da.localeCompare(db); // 古い順（日付なしは最後）
+    }
+    return b.id - a.id; // デフォルト：登録順（新しい順）
   });
 
   const container = document.getElementById('cardsList');
@@ -1559,6 +1614,7 @@ function renderList() {
             <div class="card-meta">
               ${d.instructor ? `<span class="card-instructor">${escHtml(d.instructor)}</span>` : ''}
               <span class="${getPlatformColor(p)}" style="padding:2px 7px;border-radius:20px;font-size:0.68rem;font-weight:600;">${getPlatformLabel(p)}</span>
+              ${d.lectureDate ? `<span class="card-date">📅 ${fmtDate(d.lectureDate)}</span>` : ''}
               ${d.pass ? `<span style="color:#f59e0b;font-size:0.68rem">🔑 ${escHtml(d.pass)}</span>` : ''}
             </div>
             <div class="card-url" title="${escHtml(d.url)}">${escHtml(d.url)}</div>
@@ -1605,6 +1661,13 @@ function toggleLearn(id) {
   if (sec) sec.classList.toggle('open');
 }
 
+// YYYY-MM-DD → YYYY/MM/DD 表示用
+function fmtDate(d) {
+  if (!d) return '';
+  const [y, m, day] = d.split('-');
+  return `${y}/${m}/${day}`;
+}
+
 function escHtml(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -1622,24 +1685,24 @@ function seedIfEmpty() {
   if (load().length > 0) return;
   const seed = [
     // いけとも
-    { id: 1, instructor:'いけとも（池田朋弘）', title:'Agent Skillsワークショップ 本編', url:'https://www.youtube.com/watch?v=zQq938JZE', pass:'', note:'2026/4/9開催', platform:'youtube' },
-    { id: 2, instructor:'いけとも（池田朋弘）', title:'Agent Skillsワークショップ 補足①MCP連携', url:'https://www.youtube.com/watch?v=5VHzRBCZW28', pass:'', note:'', platform:'youtube' },
-    { id: 3, instructor:'いけとも（池田朋弘）', title:'Agent Skillsワークショップ 補足②アイデア出し', url:'https://www.youtube.com/watch?v=gNR0dTFsRPc', pass:'', note:'', platform:'youtube' },
-    { id: 4, instructor:'いけとも（池田朋弘）', title:'Nano Banana 2 × Google AI Studio', url:'https://www.youtube.com/watch?v=URqvl3mWc', pass:'', note:'2026/3/21開催', platform:'youtube' },
-    { id: 5, instructor:'いけとも（池田朋弘）', title:'Excel自動化ワークショップ', url:'https://youtu.be/uaWoe9ggxnE', pass:'', note:'2026/2/28開催 ※参加者限定', platform:'youtube' },
+    { id: 1, instructor:'いけとも（池田朋弘）', title:'Agent Skillsワークショップ 本編', url:'https://www.youtube.com/watch?v=zQq938JZE', pass:'', note:'', lectureDate:'2026-04-09', platform:'youtube' },
+    { id: 2, instructor:'いけとも（池田朋弘）', title:'Agent Skillsワークショップ 補足①MCP連携', url:'https://www.youtube.com/watch?v=5VHzRBCZW28', pass:'', note:'', lectureDate:'2026-04-09', platform:'youtube' },
+    { id: 3, instructor:'いけとも（池田朋弘）', title:'Agent Skillsワークショップ 補足②アイデア出し', url:'https://www.youtube.com/watch?v=gNR0dTFsRPc', pass:'', note:'', lectureDate:'2026-04-09', platform:'youtube' },
+    { id: 4, instructor:'いけとも（池田朋弘）', title:'Nano Banana 2 × Google AI Studio', url:'https://www.youtube.com/watch?v=URqvl3mWc', pass:'', note:'', lectureDate:'2026-03-21', platform:'youtube' },
+    { id: 5, instructor:'いけとも（池田朋弘）', title:'Excel自動化ワークショップ', url:'https://youtu.be/uaWoe9ggxnE', pass:'', note:'※参加者限定', lectureDate:'2026-02-28', platform:'youtube' },
     // 越川慎司
-    { id: 10, instructor:'越川慎司', title:'ルー大柴さんとリアルトゥギャザー in 日本橋', url:'https://vimeo.com/1186917237/29489f7c5b', pass:'', note:'2026/4/25 ※申込者限定', platform:'vimeo' },
-    { id: 11, instructor:'越川慎司', title:'自分軸キャリアを磨く５つの方法 ラーニングトゥギャザー', url:'https://vimeo.com/1183751055/72a5467d9f', pass:'', note:'2026/4/16開催', platform:'vimeo' },
-    { id: 12, instructor:'越川慎司', title:'会議ファシリテーション術 ラーニングトゥギャザー', url:'https://vimeo.com/1175332145/670d61da5a', pass:'', note:'2026/3/19開催', platform:'vimeo' },
-    { id: 13, instructor:'越川慎司', title:'軽井沢ラーニングトゥギャザー フォローアップZoom', url:'https://vimeo.com/1143639932/e63be01229', pass:'', note:'2025/12/4開催', platform:'vimeo' },
-    { id: 14, instructor:'越川慎司', title:'軽井沢ラーニングトゥギャザー', url:'https://vimeo.com/1137501497/f6169a89ff', pass:'', note:'2025/11/8開催', platform:'vimeo' },
-    { id: 15, instructor:'越川慎司', title:'flier book camp トップ5%社員インプット・アウトプット術', url:'https://labo.flierinc.com/groups/9627/password', pass:'t3ZxpgLn', note:'2025/2月開講', platform:'other' },
+    { id: 10, instructor:'越川慎司', title:'ルー大柴さんとリアルトゥギャザー in 日本橋', url:'https://vimeo.com/1186917237/29489f7c5b', pass:'', note:'※申込者限定', lectureDate:'2026-04-25', platform:'vimeo' },
+    { id: 11, instructor:'越川慎司', title:'自分軸キャリアを磨く５つの方法 ラーニングトゥギャザー', url:'https://vimeo.com/1183751055/72a5467d9f', pass:'', note:'', lectureDate:'2026-04-16', platform:'vimeo' },
+    { id: 12, instructor:'越川慎司', title:'会議ファシリテーション術 ラーニングトゥギャザー', url:'https://vimeo.com/1175332145/670d61da5a', pass:'', note:'', lectureDate:'2026-03-19', platform:'vimeo' },
+    { id: 13, instructor:'越川慎司', title:'軽井沢ラーニングトゥギャザー フォローアップZoom', url:'https://vimeo.com/1143639932/e63be01229', pass:'', note:'', lectureDate:'2025-12-04', platform:'vimeo' },
+    { id: 14, instructor:'越川慎司', title:'軽井沢ラーニングトゥギャザー', url:'https://vimeo.com/1137501497/f6169a89ff', pass:'', note:'', lectureDate:'2025-11-08', platform:'vimeo' },
+    { id: 15, instructor:'越川慎司', title:'flier book camp トップ5%社員インプット・アウトプット術', url:'https://labo.flierinc.com/groups/9627/password', pass:'t3ZxpgLn', note:'2025/2月開講', lectureDate:'2025-02-01', platform:'other' },
     // 佐藤勝彦
-    { id: 20, instructor:'佐藤勝彦', title:'第58回NRLフォーラム「生成AIの現在とリテール」', url:'https://us02web.zoom.us/rec/share/J1-rBor-jtVhRPCmwPpPa_aNvsnrfMBZUkW9WdcFqwQjkC1GzIRFW0s2vjQpS69O.IlODJ6Mw_E3c585J?startTime=1687427899000', pass:'Rak6X@fR', note:'2023/6 ※期限切れ可能性あり', platform:'zoom' },
-    { id: 21, instructor:'佐藤勝彦', title:'GPT×TANRENギルド「GPT-4がもたらす未来」', url:'https://tanren.jp/seminar/05/archive', pass:'', note:'2023/5開催', platform:'other' },
+    { id: 20, instructor:'佐藤勝彦', title:'第58回NRLフォーラム「生成AIの現在とリテール」', url:'https://us02web.zoom.us/rec/share/J1-rBor-jtVhRPCmwPpPa_aNvsnrfMBZUkW9WdcFqwQjkC1GzIRFW0s2vjQpS69O.IlODJ6Mw_E3c585J?startTime=1687427899000', pass:'Rak6X@fR', note:'※期限切れ可能性あり', lectureDate:'2023-06-01', platform:'zoom' },
+    { id: 21, instructor:'佐藤勝彦', title:'GPT×TANRENギルド「GPT-4がもたらす未来」', url:'https://tanren.jp/seminar/05/archive', pass:'', note:'', lectureDate:'2023-05-01', platform:'other' },
     // うすたく
-    { id: 30, instructor:'うすたく（Michikusa）', title:'Claude Code 入門編', url:'https://us06web.zoom.us/rec/share/9bXxMWS_X-vJSt31W0iDAE9GPnGQAhNChDlNKpzG9lYObPdTgFEOosfDR-gykIpA.H_TZ6ROqPz7gpsEE', pass:'6@ac$tZw', note:'2026/4/25開催', platform:'zoom' },
-    { id: 31, instructor:'うすたく（Michikusa）', title:'Claude Code 応用編', url:'https://us06web.zoom.us/rec/share/GkD3VBT0RhRo_0wgs6K0LofFRBL2rSx4SMDAsaQwsTgRT76KBDDsmoLKQRrL5ula.ZIPuuJv3CpJKDt2A', pass:'cV!^aE5N', note:'2026/4/26開催', platform:'zoom' },
+    { id: 30, instructor:'うすたく（Michikusa）', title:'Claude Code 入門編', url:'https://us06web.zoom.us/rec/share/9bXxMWS_X-vJSt31W0iDAE9GPnGQAhNChDlNKpzG9lYObPdTgFEOosfDR-gykIpA.H_TZ6ROqPz7gpsEE', pass:'6@ac$tZw', note:'', lectureDate:'2026-04-25', platform:'zoom' },
+    { id: 31, instructor:'うすたく（Michikusa）', title:'Claude Code 応用編', url:'https://us06web.zoom.us/rec/share/GkD3VBT0RhRo_0wgs6K0LofFRBL2rSx4SMDAsaQwsTgRT76KBDDsmoLKQRrL5ula.ZIPuuJv3CpJKDt2A', pass:'cV!^aE5N', note:'', lectureDate:'2026-04-26', platform:'zoom' },
   ].map(d => ({ ...d, createdAt: new Date().toISOString() }));
   save(seed);
 }
