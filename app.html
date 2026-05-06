@@ -57,6 +57,93 @@
       padding: 4px 10px;
       border-radius: 20px;
     }
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      margin-left: 10px;
+    }
+    .btn-header {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    .btn-header:hover { border-color: var(--border-active); color: var(--text); }
+    .btn-header.export { border-color: rgba(16,185,129,0.3); color: #6ee7b7; background: rgba(16,185,129,0.08); }
+    .btn-header.export:hover { background: rgba(16,185,129,0.18); }
+    .btn-header.import { border-color: rgba(96,165,250,0.3); color: #93c5fd; background: rgba(96,165,250,0.08); }
+    .btn-header.import:hover { background: rgba(96,165,250,0.18); }
+
+    /* インポート確認モーダル */
+    .import-modal {
+      background: #1a1a2e;
+      border: 1px solid rgba(96,165,250,0.3);
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%;
+      max-width: 400px;
+    }
+    .import-modal h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #93c5fd;
+      margin-bottom: 12px;
+    }
+    .import-modal p {
+      font-size: 0.83rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+    .import-modal strong { color: var(--text); }
+    .import-choice {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .btn-choice {
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 0.83rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .btn-choice:hover { border-color: var(--border-active); background: rgba(139,92,246,0.08); }
+    .btn-choice .choice-sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      display: block;
+      margin-top: 3px;
+    }
+    .btn-choice-cancel {
+      padding: 10px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-family: inherit;
+      text-align: center;
+      width: 100%;
+    }
+    .btn-choice-cancel:hover { color: var(--text); }
 
     /* ===== LAYOUT ===== */
     .layout {
@@ -655,6 +742,11 @@
   <span style="font-size:1.3rem">📚</span>
   <h1>講座アーカイブ管理</h1>
   <div class="header-count" id="countBadge">0 件</div>
+  <div class="header-actions">
+    <button class="btn-header export" onclick="exportData()" title="データをJSONファイルに書き出す">📤 エクスポート</button>
+    <button class="btn-header import" onclick="triggerImport()" title="友達からもらったJSONを読み込む">📥 インポート</button>
+    <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="handleImportFile(this)">
+  </div>
 </header>
 
 <div class="layout">
@@ -849,6 +941,25 @@ https://vimeo.com/xxx"></textarea>
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- ===== インポート確認モーダル ===== -->
+<div class="modal-overlay" id="importModal" onclick="onImportOverlayClick(event)">
+  <div class="import-modal">
+    <h3>📥 データをインポート</h3>
+    <p id="importInfo">読み込み中...</p>
+    <div class="import-choice">
+      <button class="btn-choice" onclick="doImport('merge')">
+        🔀 マージする（おすすめ）
+        <span class="choice-sub">既存データを残しつつ、新しいデータを追加。重複は自動スキップ。</span>
+      </button>
+      <button class="btn-choice" onclick="doImport('replace')">
+        🔄 上書きする
+        <span class="choice-sub">現在のデータをすべて削除し、インポートしたデータに完全置き換え。</span>
+      </button>
+      <button class="btn-choice-cancel" onclick="closeImportModal()">キャンセル</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ===== データ管理 =====
@@ -1399,6 +1510,98 @@ function seedIfEmpty() {
     { id: 31, instructor:'うすたく（Michikusa）', title:'Claude Code 応用編', url:'https://us06web.zoom.us/rec/share/GkD3VBT0RhRo_0wgs6K0LofFRBL2rSx4SMDAsaQwsTgRT76KBDDsmoLKQRrL5ula.ZIPuuJv3CpJKDt2A', pass:'cV!^aE5N', note:'2026/4/26開催', platform:'zoom' },
   ].map(d => ({ ...d, createdAt: new Date().toISOString() }));
   save(seed);
+}
+
+// ===== エクスポート =====
+function exportData() {
+  const data = load();
+  if (data.length === 0) { showToast('⚠️ データが0件です', '#f59e0b'); return; }
+
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const date = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  a.href     = url;
+  a.download = `lecture-archive_${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(`📤 ${data.length}件をエクスポートしました！`);
+}
+
+// ===== インポート =====
+let _importBuffer = null; // ファイルから読み込んだデータを一時保存
+
+function triggerImport() {
+  document.getElementById('importFileInput').value = '';
+  document.getElementById('importFileInput').click();
+}
+
+function handleImportFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if (!Array.isArray(parsed)) throw new Error('配列形式ではありません');
+
+      _importBuffer = parsed;
+      const existing = load();
+
+      // 重複チェック（マージ時の参考情報）
+      const existingIds = new Set(existing.map(d => d.id));
+      const newCount    = parsed.filter(d => !existingIds.has(d.id)).length;
+      const dupCount    = parsed.length - newCount;
+
+      const infoEl = document.getElementById('importInfo');
+      infoEl.innerHTML = `
+        ファイル内のデータ：<strong>${parsed.length}件</strong><br>
+        うち新規：<strong style="color:#6ee7b7">${newCount}件</strong>、
+        重複（スキップ予定）：<strong style="color:#f59e0b">${dupCount}件</strong><br><br>
+        どのように取り込みますか？
+      `;
+
+      document.getElementById('importModal').classList.add('show');
+    } catch (err) {
+      showToast('⚠️ ファイルの形式が正しくありません', '#ef4444');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function doImport(mode) {
+  if (!_importBuffer) return;
+  const imported = _importBuffer;
+
+  if (mode === 'replace') {
+    save(imported);
+    showToast(`🔄 ${imported.length}件に完全置き換えしました！`);
+  } else {
+    // マージ：既存IDと重複しないものだけ追加
+    const existing   = load();
+    const existingIds = new Set(existing.map(d => d.id));
+    const toAdd      = imported.filter(d => !existingIds.has(d.id));
+    const merged     = [...toAdd, ...existing];
+    save(merged);
+    showToast(`✅ ${toAdd.length}件を追加しました！（重複${imported.length - toAdd.length}件スキップ）`);
+  }
+
+  _importBuffer = null;
+  closeImportModal();
+  renderInstructorTabs();
+  renderList();
+  updateCount();
+}
+
+function closeImportModal() {
+  document.getElementById('importModal').classList.remove('show');
+  _importBuffer = null;
+}
+
+function onImportOverlayClick(e) {
+  if (e.target === document.getElementById('importModal')) closeImportModal();
 }
 
 // ===== 初期化 =====
