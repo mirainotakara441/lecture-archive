@@ -544,10 +544,60 @@
     }
     .toast.show { opacity: 1; transform: translateY(0); }
 
-    /* ===== RESPONSIVE ===== */
+    /* ===== RESPONSIVE / iPhone ===== */
     @media (max-width: 768px) {
+      /* ヘッダー */
+      header { padding: 12px 14px; gap: 8px; flex-wrap: wrap; }
+      header h1 { font-size: 1rem; }
+      .header-count { font-size: 0.72rem; padding: 3px 8px; }
+      .header-actions { gap: 6px; margin-left: 0; width: 100%; justify-content: flex-end; }
+      .btn-header { font-size: 0.7rem; padding: 5px 9px; }
+
+      /* レイアウト */
       .layout { grid-template-columns: 1fr; }
-      .panel-left { border-right: none; border-bottom: 1px solid var(--border); }
+      .panel-left { border-right: none; border-bottom: 1px solid var(--border); padding: 16px; }
+      .panel-right { padding: 16px; }
+
+      /* 検索バー：縦積み */
+      .search-bar { flex-wrap: wrap; gap: 8px; }
+      .search-bar input { min-width: 0; flex: 1 1 100%; }
+      .search-bar select { flex: 1 1 calc(50% - 4px); font-size: 0.8rem; padding: 9px 8px; }
+
+      /* 講師タブ */
+      .itab { font-size: 0.72rem; padding: 5px 10px; }
+
+      /* カード */
+      .card { padding: 12px 14px; }
+      .card-main { gap: 10px; }
+      .card-icon { width: 36px; height: 36px; font-size: 1rem; }
+      .card-title { font-size: 0.85rem; }
+      .card-meta { flex-wrap: wrap; gap: 5px; }
+      .card-url { font-size: 0.65rem; }
+
+      /* カードアクションボタン：小さく・折り返し */
+      .card-actions { flex-wrap: wrap; gap: 5px; justify-content: flex-end; max-width: 80px; }
+      .btn-icon { width: 32px; height: 32px; font-size: 0.82rem; }
+
+      /* フォーム */
+      .tabs { gap: 3px; }
+      .tab { font-size: 0.78rem; padding: 7px 6px; }
+
+      /* モーダル */
+      .modal { padding: 20px 16px; }
+      .import-modal { padding: 20px 16px; }
+
+      /* トースト */
+      .toast { right: 12px; left: 12px; bottom: 16px; font-size: 0.8rem; text-align: center; }
+
+      /* 学びセクション */
+      .learn-text { font-size: 0.78rem; }
+    }
+
+    /* さらに小さい端末（SE など） */
+    @media (max-width: 375px) {
+      header h1 { font-size: 0.88rem; }
+      .card-actions { max-width: 70px; }
+      .btn-icon { width: 29px; height: 29px; font-size: 0.75rem; }
     }
 
     .divider {
@@ -678,6 +728,48 @@
       color: var(--text-muted);
     }
     .btn-cancel:hover { border-color: var(--border-active); color: var(--text); }
+
+    /* ===== 削除確認モーダル ===== */
+    .delete-modal {
+      background: #1a1a2e;
+      border: 1px solid rgba(239,68,68,0.35);
+      border-radius: 16px;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+    }
+    .delete-modal .del-icon { font-size: 2.2rem; margin-bottom: 10px; }
+    .delete-modal h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fca5a5;
+      margin-bottom: 8px;
+    }
+    .delete-modal p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+    .delete-modal p strong { color: var(--text); }
+    .delete-modal-actions { display: flex; gap: 10px; }
+    .btn-del-confirm {
+      flex: 1; padding: 11px; border-radius: 9px;
+      background: rgba(239,68,68,0.15);
+      border: 1px solid rgba(239,68,68,0.4);
+      color: #fca5a5; font-size: 0.88rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: all 0.2s;
+    }
+    .btn-del-confirm:hover { background: rgba(239,68,68,0.3); }
+    .btn-del-cancel {
+      flex: 1; padding: 11px; border-radius: 9px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-muted); font-size: 0.88rem; font-weight: 600;
+      cursor: pointer; font-family: inherit; transition: all 0.2s;
+    }
+    .btn-del-cancel:hover { border-color: var(--border-active); color: var(--text); }
 
     /* ===== URL確認ボタン ===== */
     .btn-check {
@@ -941,6 +1033,19 @@ https://vimeo.com/xxx"></textarea>
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- ===== 削除確認モーダル ===== -->
+<div class="modal-overlay" id="deleteModal" onclick="onDeleteOverlayClick(event)">
+  <div class="delete-modal">
+    <div class="del-icon">🗑️</div>
+    <h3>本当に削除しますか？</h3>
+    <p id="deleteModalMsg">この講座を削除します。<br>削除後は元に戻せません。</p>
+    <div class="delete-modal-actions">
+      <button class="btn-del-confirm" onclick="confirmDelete()">削除する</button>
+      <button class="btn-del-cancel" onclick="closeDeleteModal()">キャンセル</button>
+    </div>
+  </div>
+</div>
 
 <!-- ===== インポート確認モーダル ===== -->
 <div class="modal-overlay" id="importModal" onclick="onImportOverlayClick(event)">
@@ -1256,14 +1361,41 @@ function addParsed() {
   showToast(`✅ ${count}件を登録しました！`);
 }
 
-// ===== 削除 =====
+// ===== 削除（確認モーダル） =====
+let _deleteTargetId = null;
+
 function deleteItem(id) {
-  const data = load().filter(d => d.id !== id);
+  const d = load().find(x => x.id === id);
+  if (!d) return;
+  _deleteTargetId = id;
+
+  const title = d.title || d.url || '（タイトル未設定）';
+  const short = title.length > 30 ? title.slice(0, 30) + '…' : title;
+  document.getElementById('deleteModalMsg').innerHTML =
+    `「<strong>${escHtml(short)}</strong>」を削除します。<br>削除後は元に戻せません。`;
+
+  document.getElementById('deleteModal').classList.add('show');
+}
+
+function confirmDelete() {
+  if (_deleteTargetId === null) return;
+  const data = load().filter(d => d.id !== _deleteTargetId);
   save(data);
+  _deleteTargetId = null;
+  closeDeleteModal();
   renderInstructorTabs();
   renderList();
   updateCount();
   showToast('🗑️ 削除しました', '#ef4444');
+}
+
+function closeDeleteModal() {
+  document.getElementById('deleteModal').classList.remove('show');
+  _deleteTargetId = null;
+}
+
+function onDeleteOverlayClick(e) {
+  if (e.target === document.getElementById('deleteModal')) closeDeleteModal();
 }
 
 // ===== 編集モーダル =====
