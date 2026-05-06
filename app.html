@@ -266,7 +266,7 @@
     .search-bar {
       display: flex;
       gap: 10px;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
     }
     .search-bar input {
       flex: 1;
@@ -281,6 +281,42 @@
       font-family: inherit;
       cursor: pointer;
     }
+
+    /* ===== 講師タブ ===== */
+    .instructor-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .itab {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    .itab:hover { border-color: rgba(139,92,246,0.4); color: var(--text); }
+    .itab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .itab .itab-count {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      padding: 0 6px;
+      font-size: 0.68rem;
+      margin-left: 4px;
+    }
+    .itab.active .itab-count { background: rgba(255,255,255,0.25); }
 
     /* ===== CARDS ===== */
     .cards-grid {
@@ -658,6 +694,7 @@ https://vimeo.com/xxx"></textarea>
       </select>
     </div>
 
+    <div class="instructor-tabs" id="instructorTabs"></div>
     <div class="cards-grid" id="cardsList"></div>
 
   </div>
@@ -882,6 +919,7 @@ function addManual() {
   const data = load();
   data.unshift({ id: Date.now(), title, instructor, url, docUrl, pass, note, platform: getPlatform(url), createdAt: new Date().toISOString() });
   save(data);
+  renderInstructorTabs();
   renderList();
   updateCount();
 
@@ -1001,6 +1039,7 @@ function addParsed() {
   });
 
   save(data);
+  renderInstructorTabs();
   renderList();
   updateCount();
   document.getElementById('memoInput').value = '';
@@ -1012,6 +1051,7 @@ function addParsed() {
 function deleteItem(id) {
   const data = load().filter(d => d.id !== id);
   save(data);
+  renderInstructorTabs();
   renderList();
   updateCount();
   showToast('🗑️ 削除しました', '#ef4444');
@@ -1084,6 +1124,7 @@ function saveEdit() {
   };
 
   save(data);
+  renderInstructorTabs();
   renderList();
   closeModal();
   showToast('💾 保存しました！');
@@ -1097,6 +1138,38 @@ function onOverlayClick(e) {
   if (e.target === document.getElementById('modalOverlay')) closeModal();
 }
 
+// ===== 講師タブ描画 =====
+let activeInstructor = 'all';
+
+function renderInstructorTabs() {
+  const data = load();
+  const counts = {};
+  data.forEach(d => {
+    const key = d.instructor || '（未設定）';
+    counts[key] = (counts[key] || 0) + 1;
+  });
+
+  const instructors = Object.keys(counts).sort((a, b) => a.localeCompare(b, 'ja'));
+  const container = document.getElementById('instructorTabs');
+
+  container.innerHTML = `
+    <button class="itab ${activeInstructor === 'all' ? 'active' : ''}" onclick="selectInstructor('all')">
+      すべて <span class="itab-count">${data.length}</span>
+    </button>
+    ${instructors.map(name => `
+      <button class="itab ${activeInstructor === name ? 'active' : ''}" onclick="selectInstructor('${escHtml(name)}')">
+        ${escHtml(name)} <span class="itab-count">${counts[name]}</span>
+      </button>
+    `).join('')}
+  `;
+}
+
+function selectInstructor(name) {
+  activeInstructor = name;
+  renderInstructorTabs();
+  renderList();
+}
+
 // ===== 一覧描画 =====
 function renderList() {
   const query  = document.getElementById('searchInput').value.toLowerCase();
@@ -1107,14 +1180,14 @@ function renderList() {
   const filtered = data.filter(d => {
     const matchQ = !query || (d.title + d.instructor + d.url).toLowerCase().includes(query);
     const matchF = !filter || d.platform === filter;
-    return matchQ && matchF;
+    const matchI = activeInstructor === 'all' || (d.instructor || '（未設定）') === activeInstructor;
+    return matchQ && matchF && matchI;
   });
 
   // 並び替え
   filtered.sort((a, b) => {
     if (sort === 'title') return (a.title || '').localeCompare(b.title || '', 'ja');
     if (sort === 'instructor') return (a.instructor || '').localeCompare(b.instructor || '', 'ja');
-    // 登録順（デフォルト：新しい順）
     return b.id - a.id;
   });
 
@@ -1203,6 +1276,7 @@ function seedIfEmpty() {
 
 // ===== 初期化 =====
 seedIfEmpty();
+renderInstructorTabs();
 renderList();
 updateCount();
 </script>
