@@ -469,6 +469,72 @@
       margin: 4px 0;
     }
 
+    /* ===== 学びセクション ===== */
+    .card {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .card-main {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .learn-section {
+      display: none;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .learn-section.open { display: block; }
+    .learn-row {
+      margin-bottom: 12px;
+    }
+    .learn-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    .learn-text {
+      font-size: 0.82rem;
+      color: var(--text);
+      line-height: 1.7;
+      white-space: pre-wrap;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .learn-audio-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 8px;
+      background: rgba(167,139,250,0.12);
+      border: 1px solid rgba(167,139,250,0.3);
+      color: #c4b5fd;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .learn-audio-btn:hover { background: rgba(167,139,250,0.25); }
+    .btn-learn {
+      background: rgba(167,139,250,0.1);
+      border: 1px solid rgba(167,139,250,0.25);
+      color: #c4b5fd;
+      font-size: 0.72rem;
+    }
+    .btn-learn:hover { background: rgba(167,139,250,0.25); }
+    .btn-learn.has-learn {
+      background: rgba(167,139,250,0.2);
+      border-color: rgba(167,139,250,0.5);
+      color: #a78bfa;
+    }
+
     /* ===== 編集ボタン ===== */
     .btn-edit {
       background: rgba(251,191,36,0.1);
@@ -645,6 +711,21 @@
         <label>メモ（任意）</label>
         <input type="text" id="f-note" placeholder="例：2026年4月開催、参加者限定">
       </div>
+
+      <div style="height:1px;background:var(--border);margin:4px 0 14px"></div>
+      <div class="section-title">🧠 学び・示唆（任意）</div>
+
+      <div class="form-group">
+        <label>音声録画URL（任意）</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="url" id="f-audio-url" placeholder="https://... NotebookLM・音声ファイルなど">
+          <button class="btn-check" onclick="if(document.getElementById('f-audio-url').value)window.open(document.getElementById('f-audio-url').value,'_blank')" style="flex-shrink:0">開く</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>学び・要約（任意）</label>
+        <textarea id="f-summary" placeholder="講座の要点・気づき・実践したいことなどを自由に記入..." style="min-height:90px"></textarea>
+      </div>
       <button class="btn btn-primary" id="addBtn" onclick="addManual()">＋ 追加する</button>
     </div>
 
@@ -743,6 +824,21 @@ https://vimeo.com/xxx"></textarea>
     <div class="form-group">
       <label>メモ（任意）</label>
       <input type="text" id="e-note" placeholder="例：2026年4月開催、参加者限定">
+    </div>
+
+    <div style="height:1px;background:var(--border);margin:4px 0 14px"></div>
+    <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.12em;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px">🧠 学び・示唆</div>
+
+    <div class="form-group">
+      <label>音声録画URL（任意）</label>
+      <div style="display:flex;gap:8px;">
+        <input type="url" id="e-audio-url" placeholder="https://...">
+        <button class="btn-check" onclick="if(document.getElementById('e-audio-url').value)window.open(document.getElementById('e-audio-url').value,'_blank')" style="flex-shrink:0">開く</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>学び・要約（任意）</label>
+      <textarea id="e-summary" placeholder="講座の要点・気づき・実践したいことなど..." style="min-height:90px"></textarea>
     </div>
 
     <div class="modal-actions">
@@ -907,6 +1003,8 @@ function addManual() {
   const docUrl     = document.getElementById('f-doc-url').value.trim();
   const pass       = document.getElementById('f-pass').value.trim();
   const note       = document.getElementById('f-note').value.trim();
+  const audioUrl   = document.getElementById('f-audio-url').value.trim();
+  const summary    = document.getElementById('f-summary').value.trim();
 
   if (!title && !url) { showToast('⚠️ 講座名かURLを入力してください', '#f59e0b'); return; }
   const checkBtn = document.getElementById('checkBtn');
@@ -917,14 +1015,14 @@ function addManual() {
   }
 
   const data = load();
-  data.unshift({ id: Date.now(), title, instructor, url, docUrl, pass, note, platform: getPlatform(url), createdAt: new Date().toISOString() });
+  data.unshift({ id: Date.now(), title, instructor, url, docUrl, pass, note, audioUrl, summary, platform: getPlatform(url), createdAt: new Date().toISOString() });
   save(data);
   renderInstructorTabs();
   renderList();
   updateCount();
 
   // リセット
-  ['f-title','f-url','f-pass','f-note'].forEach(id => document.getElementById(id).value = '');
+  ['f-title','f-url','f-pass','f-note','f-audio-url','f-summary'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f-instructor-select').value = '';
   document.getElementById('f-instructor-manual').style.display = 'none';
   document.getElementById('f-instructor-manual').value = '';
@@ -1075,11 +1173,13 @@ function openEditModal(id) {
     manual.style.display = 'block';
     manual.value = d.instructor || '';
   }
-  document.getElementById('e-title').value   = d.title || '';
-  document.getElementById('e-url').value     = d.url || '';
-  document.getElementById('e-doc-url').value = d.docUrl || '';
-  document.getElementById('e-pass').value    = d.pass || '';
-  document.getElementById('e-note').value    = d.note || '';
+  document.getElementById('e-title').value     = d.title || '';
+  document.getElementById('e-url').value       = d.url || '';
+  document.getElementById('e-doc-url').value   = d.docUrl || '';
+  document.getElementById('e-pass').value      = d.pass || '';
+  document.getElementById('e-note').value      = d.note || '';
+  document.getElementById('e-audio-url').value = d.audioUrl || '';
+  document.getElementById('e-summary').value   = d.summary || '';
 
   // 編集中IDを保存
   document.getElementById('modalOverlay').dataset.editId = id;
@@ -1121,6 +1221,8 @@ function saveEdit() {
     pass:       document.getElementById('e-pass').value.trim(),
     note:       document.getElementById('e-note').value.trim(),
     platform:   getPlatform(url),
+    audioUrl:   document.getElementById('e-audio-url').value.trim(),
+    summary:    document.getElementById('e-summary').value.trim(),
   };
 
   save(data);
@@ -1204,24 +1306,44 @@ function renderList() {
 
   container.innerHTML = filtered.map(d => {
     const p = d.platform || getPlatform(d.url);
+    const hasLearn = !!(d.summary || d.audioUrl);
     return `
-      <div class="card">
-        <div class="card-icon ${getPlatformColor(p)}">${getPlatformIcon(p)}</div>
-        <div class="card-body">
-          <div class="card-title" title="${escHtml(d.title || d.url)}">${escHtml(d.title || '（タイトル未設定）')}</div>
-          <div class="card-meta">
-            ${d.instructor ? `<span class="card-instructor">${escHtml(d.instructor)}</span>` : ''}
-            <span class="${getPlatformColor(p)}" style="padding:2px 7px;border-radius:20px;font-size:0.68rem;font-weight:600;">${getPlatformLabel(p)}</span>
-            ${d.pass ? `<span style="color:#f59e0b;font-size:0.68rem">🔑 ${escHtml(d.pass)}</span>` : ''}
+      <div class="card" id="card-${d.id}">
+        <div class="card-main">
+          <div class="card-icon ${getPlatformColor(p)}">${getPlatformIcon(p)}</div>
+          <div class="card-body">
+            <div class="card-title" title="${escHtml(d.title || d.url)}">${escHtml(d.title || '（タイトル未設定）')}</div>
+            <div class="card-meta">
+              ${d.instructor ? `<span class="card-instructor">${escHtml(d.instructor)}</span>` : ''}
+              <span class="${getPlatformColor(p)}" style="padding:2px 7px;border-radius:20px;font-size:0.68rem;font-weight:600;">${getPlatformLabel(p)}</span>
+              ${d.pass ? `<span style="color:#f59e0b;font-size:0.68rem">🔑 ${escHtml(d.pass)}</span>` : ''}
+            </div>
+            <div class="card-url" title="${escHtml(d.url)}">${escHtml(d.url)}</div>
+            ${d.note ? `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px">${escHtml(d.note)}</div>` : ''}
           </div>
-          <div class="card-url" title="${escHtml(d.url)}">${escHtml(d.url)}</div>
-          ${d.note ? `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px">${escHtml(d.note)}</div>` : ''}
+          <div class="card-actions">
+            <button class="btn-icon btn-open" onclick="openUrl('${escHtml(d.url)}')" title="動画を開く">↗</button>
+            ${d.docUrl ? `<button class="btn-icon btn-doc-open" onclick="openUrl('${escHtml(d.docUrl)}')" title="資料を開く">📄</button>` : ''}
+            <button class="btn-icon btn-learn ${hasLearn ? 'has-learn' : ''}" onclick="toggleLearn(${d.id})" title="学び・示唆">🧠</button>
+            <button class="btn-icon btn-edit" onclick="openEditModal(${d.id})" title="編集">✏️</button>
+            <button class="btn-icon btn-delete" onclick="deleteItem(${d.id})" title="削除">✕</button>
+          </div>
         </div>
-        <div class="card-actions">
-          <button class="btn-icon btn-open" onclick="openUrl('${escHtml(d.url)}')" title="動画を開く">↗</button>
-          ${d.docUrl ? `<button class="btn-icon btn-doc-open" onclick="openUrl('${escHtml(d.docUrl)}')" title="資料を開く">📄</button>` : ''}
-          <button class="btn-icon btn-edit" onclick="openEditModal(${d.id})" title="編集">✏️</button>
-          <button class="btn-icon btn-delete" onclick="deleteItem(${d.id})" title="削除">✕</button>
+        <div class="learn-section" id="learn-${d.id}">
+          ${d.audioUrl ? `
+            <div class="learn-row">
+              <div class="learn-label">🎙 音声録画</div>
+              <a class="learn-audio-btn" href="${escHtml(d.audioUrl)}" target="_blank">▶ 音声・録画を開く</a>
+            </div>` : ''}
+          ${d.summary ? `
+            <div class="learn-row">
+              <div class="learn-label">📝 学び・要約</div>
+              <div class="learn-text">${escHtml(d.summary)}</div>
+            </div>` : ''}
+          ${!d.audioUrl && !d.summary ? `
+            <div style="font-size:0.8rem;color:var(--text-muted);text-align:center;padding:8px 0">
+              ✏️ 編集ボタンから学びを追加できます
+            </div>` : ''}
         </div>
       </div>`;
   }).join('');
@@ -1233,6 +1355,11 @@ function updateCount() {
 
 function openUrl(url) {
   if (url) window.open(url, '_blank');
+}
+
+function toggleLearn(id) {
+  const sec = document.getElementById(`learn-${id}`);
+  if (sec) sec.classList.toggle('open');
 }
 
 function escHtml(s) {
