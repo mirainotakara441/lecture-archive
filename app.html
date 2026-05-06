@@ -433,6 +433,63 @@
       margin: 4px 0;
     }
 
+    /* ===== 編集ボタン ===== */
+    .btn-edit {
+      background: rgba(251,191,36,0.1);
+      border: 1px solid rgba(251,191,36,0.25);
+      color: #fde68a;
+    }
+    .btn-edit:hover { background: rgba(251,191,36,0.25); }
+
+    /* ===== 編集モーダル ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: #1a1a2e;
+      border: 1px solid rgba(139,92,246,0.3);
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #c4b5fd;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .modal-actions .btn { flex: 1; }
+    .btn-save {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-save:hover { background: #7c3aed; }
+    .btn-cancel {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    .btn-cancel:hover { border-color: var(--border-active); color: var(--text); }
+
     /* ===== URL確認ボタン ===== */
     .btn-check {
       flex-shrink: 0;
@@ -594,10 +651,67 @@ https://vimeo.com/xxx"></textarea>
         <option value="vimeo">Vimeo</option>
         <option value="other">その他</option>
       </select>
+      <select id="sortSelect" onchange="renderList()">
+        <option value="date">登録順</option>
+        <option value="title">あいうえお順</option>
+        <option value="instructor">講師順</option>
+      </select>
     </div>
 
     <div class="cards-grid" id="cardsList"></div>
 
+  </div>
+</div>
+
+<!-- ===== 編集モーダル ===== -->
+<div class="modal-overlay" id="modalOverlay" onclick="onOverlayClick(event)">
+  <div class="modal">
+    <h3>✏️ 講座を編集</h3>
+
+    <div class="form-group">
+      <label>講師名</label>
+      <select id="e-instructor-select" onchange="onEditInstructorSelect()">
+        <option value="">── 選択してください ──</option>
+        <option value="いけとも（池田朋弘）">いけとも（池田朋弘）</option>
+        <option value="うすたく（Michikusa）">うすたく（Michikusa）</option>
+        <option value="佐藤勝彦">佐藤勝彦</option>
+        <option value="NewSchool">NewSchool</option>
+        <option value="越川慎司">越川慎司</option>
+        <option value="__manual__">✏️ 手入力する…</option>
+      </select>
+      <input type="text" id="e-instructor-manual" placeholder="講師名を入力" style="margin-top:8px;display:none;">
+    </div>
+    <div class="form-group">
+      <label>講座名</label>
+      <input type="text" id="e-title" placeholder="例：Claude Code 入門編">
+    </div>
+    <div class="form-group">
+      <label>アーカイブURL</label>
+      <div style="display:flex;gap:8px;">
+        <input type="url" id="e-url" placeholder="https://...">
+        <button class="btn-check" onclick="window.open(document.getElementById('e-url').value,'_blank')" style="flex-shrink:0">開く</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>資料URL（任意）</label>
+      <div style="display:flex;gap:8px;">
+        <input type="url" id="e-doc-url" placeholder="https://... スライド・PDFなど">
+        <button class="btn-check" onclick="window.open(document.getElementById('e-doc-url').value,'_blank')" style="flex-shrink:0">開く</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>パスコード（任意）</label>
+      <input type="text" id="e-pass" placeholder="例：Rak6X@fR">
+    </div>
+    <div class="form-group">
+      <label>メモ（任意）</label>
+      <input type="text" id="e-note" placeholder="例：2026年4月開催、参加者限定">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-save" onclick="saveEdit()">💾 保存する</button>
+      <button class="btn btn-cancel" onclick="closeModal()">キャンセル</button>
+    </div>
   </div>
 </div>
 
@@ -903,16 +1017,105 @@ function deleteItem(id) {
   showToast('🗑️ 削除しました', '#ef4444');
 }
 
+// ===== 編集モーダル =====
+function openEditModal(id) {
+  const d = load().find(x => x.id === id);
+  if (!d) return;
+
+  // モーダルにデータをセット
+  const knownInstructors = ['いけとも（池田朋弘）','うすたく（Michikusa）','佐藤勝彦','NewSchool','越川慎司'];
+  const sel = document.getElementById('e-instructor-select');
+  const manual = document.getElementById('e-instructor-manual');
+  if (knownInstructors.includes(d.instructor)) {
+    sel.value = d.instructor;
+    manual.style.display = 'none';
+    manual.value = '';
+  } else {
+    sel.value = '__manual__';
+    manual.style.display = 'block';
+    manual.value = d.instructor || '';
+  }
+  document.getElementById('e-title').value   = d.title || '';
+  document.getElementById('e-url').value     = d.url || '';
+  document.getElementById('e-doc-url').value = d.docUrl || '';
+  document.getElementById('e-pass').value    = d.pass || '';
+  document.getElementById('e-note').value    = d.note || '';
+
+  // 編集中IDを保存
+  document.getElementById('modalOverlay').dataset.editId = id;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function onEditInstructorSelect() {
+  const sel = document.getElementById('e-instructor-select');
+  const manual = document.getElementById('e-instructor-manual');
+  if (sel.value === '__manual__') {
+    manual.style.display = 'block';
+    manual.focus();
+  } else {
+    manual.style.display = 'none';
+    manual.value = '';
+  }
+}
+
+function getEditInstructor() {
+  const sel = document.getElementById('e-instructor-select');
+  return sel.value === '__manual__'
+    ? document.getElementById('e-instructor-manual').value.trim()
+    : sel.value;
+}
+
+function saveEdit() {
+  const id    = Number(document.getElementById('modalOverlay').dataset.editId);
+  const data  = load();
+  const idx   = data.findIndex(x => x.id === id);
+  if (idx === -1) return;
+
+  const url = document.getElementById('e-url').value.trim();
+  data[idx] = {
+    ...data[idx],
+    instructor: getEditInstructor(),
+    title:      document.getElementById('e-title').value.trim(),
+    url,
+    docUrl:     document.getElementById('e-doc-url').value.trim(),
+    pass:       document.getElementById('e-pass').value.trim(),
+    note:       document.getElementById('e-note').value.trim(),
+    platform:   getPlatform(url),
+  };
+
+  save(data);
+  renderList();
+  closeModal();
+  showToast('💾 保存しました！');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+
+function onOverlayClick(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
+
 // ===== 一覧描画 =====
 function renderList() {
   const query  = document.getElementById('searchInput').value.toLowerCase();
   const filter = document.getElementById('filterSelect').value;
+  const sort   = document.getElementById('sortSelect').value;
   const data   = load();
 
   const filtered = data.filter(d => {
     const matchQ = !query || (d.title + d.instructor + d.url).toLowerCase().includes(query);
     const matchF = !filter || d.platform === filter;
     return matchQ && matchF;
+  });
+
+  // 並び替え
+  filtered.sort((a, b) => {
+    if (sort === 'title') return (a.title || '').localeCompare(b.title || '', 'ja');
+    if (sort === 'instructor') return (a.instructor || '').localeCompare(b.instructor || '', 'ja');
+    // 登録順（デフォルト：新しい順）
+    return b.id - a.id;
   });
 
   const container = document.getElementById('cardsList');
@@ -944,6 +1147,7 @@ function renderList() {
         <div class="card-actions">
           <button class="btn-icon btn-open" onclick="openUrl('${escHtml(d.url)}')" title="動画を開く">↗</button>
           ${d.docUrl ? `<button class="btn-icon btn-doc-open" onclick="openUrl('${escHtml(d.docUrl)}')" title="資料を開く">📄</button>` : ''}
+          <button class="btn-icon btn-edit" onclick="openEditModal(${d.id})" title="編集">✏️</button>
           <button class="btn-icon btn-delete" onclick="deleteItem(${d.id})" title="削除">✕</button>
         </div>
       </div>`;
