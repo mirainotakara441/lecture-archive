@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>講座アーカイブ管理</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0d0d1a;
+      --surface: #161626;
+      --surface2: #1e1e32;
+      --border: rgba(255,255,255,0.08);
+      --border-active: rgba(139,92,246,0.5);
+      --accent: #8b5cf6;
+      --accent2: #6366f1;
+      --text: #e2e8f0;
+      --text-muted: #64748b;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+
+    body {
+      font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    header h1 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header-count {
+      margin-left: auto;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      background: var(--surface2);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    /* ===== LAYOUT ===== */
+    .layout {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 0;
+      min-height: calc(100vh - 65px);
+    }
+
+    /* ===== LEFT PANEL ===== */
+    .panel-left {
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .section-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ===== TABS ===== */
+    .tabs {
+      display: flex;
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 4px;
+      gap: 4px;
+    }
+    .tab {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      font-weight: 600;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .tab.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ===== FORM ===== */
+    .form-group {
+      margin-bottom: 14px;
+    }
+    label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    input[type="text"], input[type="url"], textarea, select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 0.88rem;
+      font-family: inherit;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+    input[type="text"]:focus,
+    input[type="url"]:focus,
+    textarea:focus {
+      border-color: var(--border-active);
+    }
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+      line-height: 1.6;
+    }
+
+    /* ===== MEMO AREA ===== */
+    .memo-hint {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+    .memo-hint span { color: #a78bfa; }
+
+    .parsed-preview {
+      background: rgba(16,185,129,0.08);
+      border: 1px solid rgba(16,185,129,0.25);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 12px;
+      display: none;
+    }
+    .parsed-preview.show { display: block; }
+    .parsed-preview h4 {
+      font-size: 0.72rem;
+      color: var(--success);
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: 0.08em;
+    }
+    .parsed-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .parsed-item input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      margin-top: 2px;
+      accent-color: var(--accent);
+      flex-shrink: 0;
+    }
+    .parsed-item-info { flex: 1; min-width: 0; }
+    .parsed-item-info .pi-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .parsed-item-info .pi-url {
+      font-size: 0.7rem;
+      color: #60a5fa;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .parsed-item-info .pi-edit {
+      margin-top: 6px;
+      display: flex;
+      gap: 6px;
+    }
+    .parsed-item-info .pi-edit input {
+      font-size: 0.75rem;
+      padding: 4px 8px;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      width: 100%;
+    }
+    .btn-primary:hover { background: #7c3aed; }
+    .btn-secondary {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 100%;
+    }
+    .btn-secondary:hover { border-color: var(--border-active); }
+    .btn-success {
+      background: var(--success);
+      color: #fff;
+      width: 100%;
+      margin-top: 8px;
+    }
+    .btn-success:hover { background: #059669; }
+
+    /* ===== RIGHT PANEL ===== */
+    .panel-right {
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    /* ===== SEARCH & FILTER ===== */
+    .search-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .search-bar input {
+      flex: 1;
+    }
+    select {
+      padding: 10px 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.85rem;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    /* ===== CARDS ===== */
+    .cards-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .card:hover {
+      border-color: rgba(139,92,246,0.3);
+      background: var(--surface2);
+    }
+
+    .card-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .card-body { flex: 1; min-width: 0; }
+    .card-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card-meta {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .card-instructor {
+      background: rgba(139,92,246,0.15);
+      border: 1px solid rgba(139,92,246,0.3);
+      color: #c4b5fd;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 0.68rem;
+      font-weight: 600;
+    }
+    .card-url {
+      font-size: 0.7rem;
+      color: #60a5fa;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 4px;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .btn-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .btn-open {
+      background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      color: #a5b4fc;
+    }
+    .btn-open:hover { background: rgba(99,102,241,0.35); }
+    .btn-delete {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.25);
+      color: #fca5a5;
+    }
+    .btn-delete:hover { background: rgba(239,68,68,0.25); }
+    .btn-doc-open {
+      background: rgba(52,211,153,0.1);
+      border: 1px solid rgba(52,211,153,0.25);
+      color: #6ee7b7;
+    }
+    .btn-doc-open:hover { background: rgba(52,211,153,0.25); }
+
+    /* platform badge */
+    .badge-yt   { background: rgba(239,68,68,0.15);  color: #fca5a5;  border: 1px solid rgba(239,68,68,0.3); }
+    .badge-zoom { background: rgba(59,130,246,0.15); color: #93c5fd;  border: 1px solid rgba(59,130,246,0.3);}
+    .badge-vimeo{ background: rgba(26,183,234,0.15); color: #7dd3fc;  border: 1px solid rgba(26,183,234,0.3);}
+    .badge-other{ background: rgba(100,116,139,0.15);color: #cbd5e1;  border: 1px solid rgba(100,116,139,0.3);}
+
+    /* ===== EMPTY STATE ===== */
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .empty-icon { font-size: 3rem; margin-bottom: 16px; }
+    .empty p { font-size: 0.9rem; }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--success);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s;
+      z-index: 999;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .layout { grid-template-columns: 1fr; }
+      .panel-left { border-right: none; border-bottom: 1px solid var(--border); }
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
+    /* ===== URL確認ボタン ===== */
+    .btn-check {
+      flex-shrink: 0;
+      padding: 9px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(99,102,241,0.4);
+      background: rgba(99,102,241,0.15);
+      color: #a5b4fc;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    .btn-check:hover:not(:disabled) {
+      background: rgba(99,102,241,0.35);
+      border-color: #6366f1;
+    }
+    .btn-check:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    .url-status {
+      margin-top: 6px;
+      font-size: 0.72rem;
+      min-height: 16px;
+      transition: all 0.2s;
+    }
+    .url-status.ok   { color: #10b981; }
+    .url-status.warn { color: #f59e0b; }
+
+    /* 解析結果の確認ボタン */
+    .btn-check-mini {
+      padding: 3px 9px;
+      border-radius: 6px;
+      border: 1px solid rgba(99,102,241,0.4);
+      background: rgba(99,102,241,0.12);
+      color: #a5b4fc;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    .btn-check-mini:hover {
+      background: rgba(99,102,241,0.3);
+    }
+
+    /* 登録ボタンのロック状態 */
+    .btn-primary.locked {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <span style="font-size:1.3rem">📚</span>
+  <h1>講座アーカイブ管理</h1>
+  <div class="header-count" id="countBadge">0 件</div>
+</header>
+
+<div class="layout">
+
+  <!-- ===== 左パネル：入力 ===== -->
+  <div class="panel-left">
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('manual')">✏️ 手動入力</button>
+      <button class="tab" onclick="switchTab('memo')">📋 メモから取得</button>
+    </div>
+
+    <!-- 手動入力 -->
+    <div class="tab-content active" id="tab-manual">
+      <div class="section-title">📝 講座を登録</div>
+      <div class="form-group">
+        <label>講師名</label>
+        <select id="f-instructor-select" onchange="onInstructorSelect()">
+          <option value="">── 選択してください ──</option>
+          <option value="いけとも（池田朋弘）">いけとも（池田朋弘）</option>
+          <option value="うすたく（Michikusa）">うすたく（Michikusa）</option>
+          <option value="佐藤勝彦">佐藤勝彦</option>
+          <option value="NewSchool">NewSchool</option>
+          <option value="越川慎司">越川慎司</option>
+          <option value="__manual__">✏️ 手入力する…</option>
+        </select>
+        <input type="text" id="f-instructor-manual" placeholder="講師名を入力" style="margin-top:8px;display:none;">
+      </div>
+      <div class="form-group">
+        <label>講座名</label>
+        <input type="text" id="f-title" placeholder="例：Claude Code 入門編">
+      </div>
+      <div class="form-group">
+        <label>アーカイブURL</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="url" id="f-url" placeholder="https://..." oninput="updateCheckBtn()">
+          <button class="btn-check" id="checkBtn" onclick="checkUrl()" title="URLを開いて確認" disabled>確認</button>
+        </div>
+        <div class="url-status" id="urlStatus"></div>
+      </div>
+      <div class="form-group">
+        <label>資料URL（任意）</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="url" id="f-doc-url" placeholder="https://... スライド・PDF・Driveなど" oninput="updateDocCheckBtn()">
+          <button class="btn-check" id="docCheckBtn" onclick="checkDocUrl()" title="資料URLを開いて確認" disabled>確認</button>
+        </div>
+        <div class="url-status" id="docUrlStatus"></div>
+      </div>
+      <div class="form-group">
+        <label>パスコード（任意）</label>
+        <input type="text" id="f-pass" placeholder="例：Rak6X@fR">
+      </div>
+      <div class="form-group">
+        <label>メモ（任意）</label>
+        <input type="text" id="f-note" placeholder="例：2026年4月開催、参加者限定">
+      </div>
+      <button class="btn btn-primary" id="addBtn" onclick="addManual()">＋ 追加する</button>
+    </div>
+
+    <!-- メモ入力 -->
+    <div class="tab-content" id="tab-memo">
+      <div class="section-title">📋 メモ貼り付け → 自動解析</div>
+      <div class="form-group">
+        <textarea id="memoInput" placeholder="メールやメモをそのまま貼り付けてください。URLと前後の文脈から講師名・講座名を自動で読み取ります。
+
+例）
+いけとも｜Agent Skillsワークショップ
+https://www.youtube.com/watch?v=xxx
+
+越川慎司 会議ファシリテーション術
+https://vimeo.com/xxx"></textarea>
+        <p class="memo-hint">
+          <span>URLが含まれていれば</span>、前後のテキストから講師名・講座名を自動抽出します。複数のURLをまとめて貼り付けもOK。
+        </p>
+      </div>
+      <button class="btn btn-secondary" onclick="parseMemo()">🔍 解析する</button>
+
+      <div class="parsed-preview" id="parsedPreview">
+        <h4>✅ 解析結果 — チェックして登録</h4>
+        <div id="parsedList"></div>
+        <button class="btn btn-success" onclick="addParsed()">チェックした項目を登録する</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== 右パネル：一覧 ===== -->
+  <div class="panel-right">
+
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="🔍 講座名・講師名で絞り込み..." oninput="renderList()">
+      <select id="filterSelect" onchange="renderList()">
+        <option value="">すべて</option>
+        <option value="youtube">YouTube</option>
+        <option value="zoom">Zoom</option>
+        <option value="vimeo">Vimeo</option>
+        <option value="other">その他</option>
+      </select>
+    </div>
+
+    <div class="cards-grid" id="cardsList"></div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== データ管理 =====
+const STORAGE_KEY = 'lecture_archives_v2';
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+function save(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+// ===== プラットフォーム判定 =====
+function getPlatform(url) {
+  if (!url) return 'other';
+  const u = url.toLowerCase();
+  if (u.includes('youtube.com') || u.includes('youtu.be')) return 'youtube';
+  if (u.includes('zoom.us')) return 'zoom';
+  if (u.includes('vimeo.com')) return 'vimeo';
+  return 'other';
+}
+function getPlatformIcon(p) {
+  return { youtube: '▶️', zoom: '💻', vimeo: '🎬', other: '🔗' }[p] || '🔗';
+}
+function getPlatformLabel(p) {
+  return { youtube: 'YouTube', zoom: 'Zoom', vimeo: 'Vimeo', other: 'Link' }[p] || 'Link';
+}
+function getPlatformColor(p) {
+  return { youtube: 'badge-yt', zoom: 'badge-zoom', vimeo: 'badge-vimeo', other: 'badge-other' }[p] || 'badge-other';
+}
+
+// ===== TAB切替 =====
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelector(`#tab-${name}`).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ===== 講師名セレクト =====
+function onInstructorSelect() {
+  const sel = document.getElementById('f-instructor-select');
+  const manual = document.getElementById('f-instructor-manual');
+  if (sel.value === '__manual__') {
+    manual.style.display = 'block';
+    manual.focus();
+  } else {
+    manual.style.display = 'none';
+    manual.value = '';
+  }
+}
+
+function getInstructor() {
+  const sel = document.getElementById('f-instructor-select');
+  if (sel.value === '__manual__') return document.getElementById('f-instructor-manual').value.trim();
+  return sel.value;
+}
+
+// ===== URL確認（手動入力） =====
+function updateCheckBtn() {
+  const url = document.getElementById('f-url').value.trim();
+  const btn = document.getElementById('checkBtn');
+  const status = document.getElementById('urlStatus');
+  btn.disabled = !url;
+  if (!url) { status.textContent = ''; status.className = 'url-status'; }
+  // URLが変わったら確認済みフラグをリセット
+  btn.dataset.confirmed = '';
+  status.textContent = '';
+  status.className = 'url-status';
+  updateAddBtn();
+}
+
+function checkUrl() {
+  const url = document.getElementById('f-url').value.trim();
+  if (!url) return;
+  window.open(url, '_blank');
+  const btn = document.getElementById('checkBtn');
+  const status = document.getElementById('urlStatus');
+  btn.dataset.confirmed = 'true';
+  btn.textContent = '✅ 確認済';
+  btn.style.background = 'rgba(16,185,129,0.15)';
+  btn.style.borderColor = 'rgba(16,185,129,0.5)';
+  btn.style.color = '#6ee7b7';
+  status.textContent = 'URLを開きました。アクセスできたら「追加する」で登録してください。';
+  status.className = 'url-status ok';
+  updateAddBtn();
+}
+
+function updateAddBtn() {
+  const btn = document.getElementById('checkBtn');
+  const addBtn = document.getElementById('addBtn');
+  const url = document.getElementById('f-url').value.trim();
+  if (!url) {
+    // URLなし → 制限なし（タイトルだけの登録も許可）
+    addBtn.classList.remove('locked');
+    addBtn.title = '';
+    return;
+  }
+  const confirmed = btn.dataset.confirmed === 'true';
+  if (confirmed) {
+    addBtn.classList.remove('locked');
+    addBtn.title = '';
+  } else {
+    addBtn.classList.add('locked');
+    addBtn.title = 'URLを「確認」ボタンで開いてから登録してください';
+  }
+}
+
+function updateDocCheckBtn() {
+  const url = document.getElementById('f-doc-url').value.trim();
+  const btn = document.getElementById('docCheckBtn');
+  const status = document.getElementById('docUrlStatus');
+  btn.disabled = !url;
+  btn.dataset.confirmed = '';
+  btn.textContent = '確認';
+  btn.style.background = btn.style.borderColor = btn.style.color = '';
+  status.textContent = '';
+  status.className = 'url-status';
+}
+
+function checkDocUrl() {
+  const url = document.getElementById('f-doc-url').value.trim();
+  if (!url) return;
+  window.open(url, '_blank');
+  const btn = document.getElementById('docCheckBtn');
+  btn.dataset.confirmed = 'true';
+  btn.textContent = '✅ 確認済';
+  btn.style.background = 'rgba(16,185,129,0.15)';
+  btn.style.borderColor = 'rgba(16,185,129,0.5)';
+  btn.style.color = '#6ee7b7';
+  const status = document.getElementById('docUrlStatus');
+  status.textContent = '資料URLを開きました。';
+  status.className = 'url-status ok';
+}
+
+function checkUrlMini(url, btnEl) {
+  if (!url) return;
+  window.open(url, '_blank');
+  btnEl.textContent = '✅ 確認済';
+  btnEl.style.background = 'rgba(16,185,129,0.15)';
+  btnEl.style.borderColor = 'rgba(16,185,129,0.4)';
+  btnEl.style.color = '#6ee7b7';
+  btnEl.dataset.confirmed = 'true';
+}
+
+// ===== 手動追加 =====
+function addManual() {
+  const title      = document.getElementById('f-title').value.trim();
+  const instructor = getInstructor();
+  const url        = document.getElementById('f-url').value.trim();
+  const docUrl     = document.getElementById('f-doc-url').value.trim();
+  const pass       = document.getElementById('f-pass').value.trim();
+  const note       = document.getElementById('f-note').value.trim();
+
+  if (!title && !url) { showToast('⚠️ 講座名かURLを入力してください', '#f59e0b'); return; }
+  const checkBtn = document.getElementById('checkBtn');
+  if (url && checkBtn.dataset.confirmed !== 'true') {
+    showToast('⚠️ まず「確認」ボタンでURLを開いてください', '#f59e0b');
+    document.getElementById('f-url').focus();
+    return;
+  }
+
+  const data = load();
+  data.unshift({ id: Date.now(), title, instructor, url, docUrl, pass, note, platform: getPlatform(url), createdAt: new Date().toISOString() });
+  save(data);
+  renderList();
+  updateCount();
+
+  // リセット
+  ['f-title','f-url','f-pass','f-note'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-instructor-select').value = '';
+  document.getElementById('f-instructor-manual').style.display = 'none';
+  document.getElementById('f-instructor-manual').value = '';
+  const dcb = document.getElementById('docCheckBtn');
+  dcb.dataset.confirmed = '';
+  dcb.textContent = '確認';
+  dcb.style.background = dcb.style.borderColor = dcb.style.color = '';
+  dcb.disabled = true;
+  document.getElementById('docUrlStatus').textContent = '';
+  document.getElementById('docUrlStatus').className = 'url-status';
+  const cb = document.getElementById('checkBtn');
+  cb.dataset.confirmed = '';
+  cb.textContent = '確認';
+  cb.style.background = '';
+  cb.style.borderColor = '';
+  cb.style.color = '';
+  cb.disabled = true;
+  document.getElementById('urlStatus').textContent = '';
+  document.getElementById('urlStatus').className = 'url-status';
+  document.getElementById('addBtn').classList.remove('locked');
+  showToast('✅ 追加しました！');
+}
+
+// ===== メモ解析 =====
+function parseMemo() {
+  const text = document.getElementById('memoInput').value;
+  if (!text.trim()) { showToast('⚠️ テキストを貼り付けてください', '#f59e0b'); return; }
+
+  const urlRegex = /https?:\/\/[^\s\n\r　、。！？「」【】（）\)>]+/g;
+  const lines = text.split(/\n/);
+  const results = [];
+
+  lines.forEach((line, idx) => {
+    const urls = line.match(urlRegex);
+    if (!urls) return;
+
+    urls.forEach(url => {
+      // URL前後の行からタイトル候補を探す
+      const cleanLine = line.replace(urlRegex, '').replace(/[▶📹📎📄🔗🎬💻✅★▼►\[\]「」【】]/g, '').trim();
+      const prevLine  = (lines[idx - 1] || '').replace(urlRegex, '').trim();
+      const nextLine  = (lines[idx + 1] || '').replace(urlRegex, '').trim();
+
+      // タイトル候補（最も長い非空文字列を優先）
+      const candidates = [cleanLine, prevLine, nextLine].filter(s => s.length > 0);
+      let title = candidates.sort((a, b) => b.length - a.length)[0] || '';
+
+      // 講師名抽出：「｜」「/」「：」「さん」「氏」などで区切る
+      let instructor = '';
+      const instructorMatch = title.match(/^([^\|｜\/／：:\n]{2,10})[｜|\/／：:]/);
+      if (instructorMatch) {
+        instructor = instructorMatch[1].trim();
+        title = title.replace(instructorMatch[0], '').trim();
+      }
+
+      // パスコード抽出
+      let pass = '';
+      const passMatch = text.match(/(?:パスコード|パスワード|PW|pass)[^\n]*?[:：]?\s*([A-Za-z0-9!@#$%^&*()_+\-=\[\]{}|;':",.<>?\/`~\\]{4,20})/i);
+      if (passMatch) pass = passMatch[1].trim();
+
+      // タイトルの長さ制限（URLっぽいものを除外）
+      if (title.includes('http') || title.length < 2) title = '';
+
+      results.push({ url: url.replace(/[.,)>]+$/, ''), title, instructor, pass, checked: true });
+    });
+  });
+
+  if (results.length === 0) { showToast('⚠️ URLが見つかりませんでした', '#f59e0b'); return; }
+
+  // 重複除去
+  const unique = results.filter((r, i, arr) => arr.findIndex(x => x.url === r.url) === i);
+
+  const preview = document.getElementById('parsedPreview');
+  const list    = document.getElementById('parsedList');
+  list.innerHTML = '';
+
+  unique.forEach((item, i) => {
+    list.innerHTML += `
+      <div class="parsed-item">
+        <input type="checkbox" id="pc${i}" ${item.checked ? 'checked' : ''}>
+        <div class="parsed-item-info">
+          <div class="pi-edit">
+            <input type="text" id="pt${i}" value="${escHtml(item.title)}" placeholder="講座名">
+            <input type="text" id="pi${i}" value="${escHtml(item.instructor)}" placeholder="講師名">
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+            <div class="pi-url" style="flex:1" title="${escHtml(item.url)}">${escHtml(item.url)}</div>
+            <button class="btn-check-mini" onclick="checkUrlMini('${escHtml(item.url)}', this)">確認</button>
+          </div>
+          ${item.pass ? `<div style="font-size:0.68rem;color:#f59e0b;margin-top:3px">🔑 ${escHtml(item.pass)}</div>` : ''}
+        </div>
+      </div>`;
+  });
+
+  preview.classList.add('show');
+  preview._data = unique;
+}
+
+// ===== 解析結果を登録 =====
+function addParsed() {
+  const preview = document.getElementById('parsedPreview');
+  const items   = preview._data || [];
+  const data    = load();
+  let count     = 0;
+
+  items.forEach((item, i) => {
+    if (!document.getElementById(`pc${i}`).checked) return;
+    const title      = document.getElementById(`pt${i}`).value.trim();
+    const instructor = document.getElementById(`pi${i}`).value.trim();
+    const url        = item.url;
+    data.unshift({ id: Date.now() + i, title, instructor, url, pass: item.pass || '', note: '', platform: getPlatform(url), createdAt: new Date().toISOString() });
+    count++;
+  });
+
+  save(data);
+  renderList();
+  updateCount();
+  document.getElementById('memoInput').value = '';
+  preview.classList.remove('show');
+  showToast(`✅ ${count}件を登録しました！`);
+}
+
+// ===== 削除 =====
+function deleteItem(id) {
+  const data = load().filter(d => d.id !== id);
+  save(data);
+  renderList();
+  updateCount();
+  showToast('🗑️ 削除しました', '#ef4444');
+}
+
+// ===== 一覧描画 =====
+function renderList() {
+  const query  = document.getElementById('searchInput').value.toLowerCase();
+  const filter = document.getElementById('filterSelect').value;
+  const data   = load();
+
+  const filtered = data.filter(d => {
+    const matchQ = !query || (d.title + d.instructor + d.url).toLowerCase().includes(query);
+    const matchF = !filter || d.platform === filter;
+    return matchQ && matchF;
+  });
+
+  const container = document.getElementById('cardsList');
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">📭</div>
+        <p>${data.length === 0 ? '左のパネルから講座を追加してください' : '条件に一致する講座がありません'}</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(d => {
+    const p = d.platform || getPlatform(d.url);
+    return `
+      <div class="card">
+        <div class="card-icon ${getPlatformColor(p)}">${getPlatformIcon(p)}</div>
+        <div class="card-body">
+          <div class="card-title" title="${escHtml(d.title || d.url)}">${escHtml(d.title || '（タイトル未設定）')}</div>
+          <div class="card-meta">
+            ${d.instructor ? `<span class="card-instructor">${escHtml(d.instructor)}</span>` : ''}
+            <span class="${getPlatformColor(p)}" style="padding:2px 7px;border-radius:20px;font-size:0.68rem;font-weight:600;">${getPlatformLabel(p)}</span>
+            ${d.pass ? `<span style="color:#f59e0b;font-size:0.68rem">🔑 ${escHtml(d.pass)}</span>` : ''}
+          </div>
+          <div class="card-url" title="${escHtml(d.url)}">${escHtml(d.url)}</div>
+          ${d.note ? `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px">${escHtml(d.note)}</div>` : ''}
+        </div>
+        <div class="card-actions">
+          <button class="btn-icon btn-open" onclick="openUrl('${escHtml(d.url)}')" title="動画を開く">↗</button>
+          ${d.docUrl ? `<button class="btn-icon btn-doc-open" onclick="openUrl('${escHtml(d.docUrl)}')" title="資料を開く">📄</button>` : ''}
+          <button class="btn-icon btn-delete" onclick="deleteItem(${d.id})" title="削除">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function updateCount() {
+  document.getElementById('countBadge').textContent = load().length + ' 件';
+}
+
+function openUrl(url) {
+  if (url) window.open(url, '_blank');
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg, color = '#10b981') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = color;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ===== 初期データ（収集済みアーカイブ）=====
+function seedIfEmpty() {
+  if (load().length > 0) return;
+  const seed = [
+    // いけとも
+    { id: 1, instructor:'いけとも（池田朋弘）', title:'Agent Skillsワークショップ 本編', url:'https://www.youtube.com/watch?v=zQq938JZE', pass:'', note:'2026/4/9開催', platform:'youtube' },
+    { id: 2, instructor:'いけとも（池田朋弘）', title:'Agent Skillsワークショップ 補足①MCP連携', url:'https://www.youtube.com/watch?v=5VHzRBCZW28', pass:'', note:'', platform:'youtube' },
+    { id: 3, instructor:'いけとも（池田朋弘）', title:'Agent Skillsワークショップ 補足②アイデア出し', url:'https://www.youtube.com/watch?v=gNR0dTFsRPc', pass:'', note:'', platform:'youtube' },
+    { id: 4, instructor:'いけとも（池田朋弘）', title:'Nano Banana 2 × Google AI Studio', url:'https://www.youtube.com/watch?v=URqvl3mWc', pass:'', note:'2026/3/21開催', platform:'youtube' },
+    { id: 5, instructor:'いけとも（池田朋弘）', title:'Excel自動化ワークショップ', url:'https://youtu.be/uaWoe9ggxnE', pass:'', note:'2026/2/28開催 ※参加者限定', platform:'youtube' },
+    // 越川慎司
+    { id: 10, instructor:'越川慎司', title:'ルー大柴さんとリアルトゥギャザー in 日本橋', url:'https://vimeo.com/1186917237/29489f7c5b', pass:'', note:'2026/4/25 ※申込者限定', platform:'vimeo' },
+    { id: 11, instructor:'越川慎司', title:'自分軸キャリアを磨く５つの方法 ラーニングトゥギャザー', url:'https://vimeo.com/1183751055/72a5467d9f', pass:'', note:'2026/4/16開催', platform:'vimeo' },
+    { id: 12, instructor:'越川慎司', title:'会議ファシリテーション術 ラーニングトゥギャザー', url:'https://vimeo.com/1175332145/670d61da5a', pass:'', note:'2026/3/19開催', platform:'vimeo' },
+    { id: 13, instructor:'越川慎司', title:'軽井沢ラーニングトゥギャザー フォローアップZoom', url:'https://vimeo.com/1143639932/e63be01229', pass:'', note:'2025/12/4開催', platform:'vimeo' },
+    { id: 14, instructor:'越川慎司', title:'軽井沢ラーニングトゥギャザー', url:'https://vimeo.com/1137501497/f6169a89ff', pass:'', note:'2025/11/8開催', platform:'vimeo' },
+    { id: 15, instructor:'越川慎司', title:'flier book camp トップ5%社員インプット・アウトプット術', url:'https://labo.flierinc.com/groups/9627/password', pass:'t3ZxpgLn', note:'2025/2月開講', platform:'other' },
+    // 佐藤勝彦
+    { id: 20, instructor:'佐藤勝彦', title:'第58回NRLフォーラム「生成AIの現在とリテール」', url:'https://us02web.zoom.us/rec/share/J1-rBor-jtVhRPCmwPpPa_aNvsnrfMBZUkW9WdcFqwQjkC1GzIRFW0s2vjQpS69O.IlODJ6Mw_E3c585J?startTime=1687427899000', pass:'Rak6X@fR', note:'2023/6 ※期限切れ可能性あり', platform:'zoom' },
+    { id: 21, instructor:'佐藤勝彦', title:'GPT×TANRENギルド「GPT-4がもたらす未来」', url:'https://tanren.jp/seminar/05/archive', pass:'', note:'2023/5開催', platform:'other' },
+    // うすたく
+    { id: 30, instructor:'うすたく（Michikusa）', title:'Claude Code 入門編', url:'https://us06web.zoom.us/rec/share/9bXxMWS_X-vJSt31W0iDAE9GPnGQAhNChDlNKpzG9lYObPdTgFEOosfDR-gykIpA.H_TZ6ROqPz7gpsEE', pass:'6@ac$tZw', note:'2026/4/25開催', platform:'zoom' },
+    { id: 31, instructor:'うすたく（Michikusa）', title:'Claude Code 応用編', url:'https://us06web.zoom.us/rec/share/GkD3VBT0RhRo_0wgs6K0LofFRBL2rSx4SMDAsaQwsTgRT76KBDDsmoLKQRrL5ula.ZIPuuJv3CpJKDt2A', pass:'cV!^aE5N', note:'2026/4/26開催', platform:'zoom' },
+  ].map(d => ({ ...d, createdAt: new Date().toISOString() }));
+  save(seed);
+}
+
+// ===== 初期化 =====
+seedIfEmpty();
+renderList();
+updateCount();
+</script>
+</body>
+</html>

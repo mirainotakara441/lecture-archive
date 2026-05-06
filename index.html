@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>講座アーカイブ集</title>
+  <!-- usutaku card color -->
+  <style>
+    .card:nth-child(4) .avatar-placeholder {
+      background: linear-gradient(135deg, #7c2d12, #ea580c);
+      border-color: #fb923c;
+      color: #ffedd5;
+    }
+    .card:nth-child(4) .speaker-info h2 { color: #fdba74; }
+    .card:nth-child(4) .avatar { border-color: #fb923c; }
+    .btn-michikusa {
+      background: rgba(251,146,60,0.15);
+      border: 1px solid rgba(251,146,60,0.4);
+      color: #fdba74;
+    }
+    .btn-michikusa:hover {
+      background: rgba(251,146,60,0.3);
+      border-color: #fb923c;
+    }
+    .btn-github {
+      background: rgba(148,163,184,0.15);
+      border: 1px solid rgba(148,163,184,0.4);
+      color: #cbd5e1;
+    }
+    .btn-github:hover {
+      background: rgba(148,163,184,0.3);
+      border-color: #94a3b8;
+    }
+  </style>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
+      background: #0f0f1a;
+      color: #e8e8f0;
+      min-height: 100vh;
+    }
+
+    /* ヘッダー */
+    header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      padding: 60px 20px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(ellipse at center, rgba(99,102,241,0.15) 0%, transparent 70%);
+      animation: pulse 6s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.1); opacity: 1; }
+    }
+    header h1 {
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      background: linear-gradient(90deg, #a78bfa, #60a5fa, #34d399);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      position: relative;
+      z-index: 1;
+    }
+    header p {
+      margin-top: 12px;
+      font-size: 1rem;
+      color: #94a3b8;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* メインコンテンツ */
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 60px 20px;
+    }
+
+    /* 講師カード */
+    .speakers {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 32px;
+    }
+
+    .card {
+      background: linear-gradient(135deg, #1e1e30 0%, #1a1a2e 100%);
+      border: 1px solid rgba(99,102,241,0.25);
+      border-radius: 20px;
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 60px rgba(99,102,241,0.3);
+    }
+
+    .card-header {
+      padding: 32px 28px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid;
+      flex-shrink: 0;
+    }
+    .card:nth-child(1) .avatar { border-color: #a78bfa; }
+    .card:nth-child(2) .avatar { border-color: #60a5fa; }
+    .card:nth-child(3) .avatar { border-color: #34d399; }
+
+    /* 顔写真プレースホルダー */
+    .avatar-placeholder {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      border: 3px solid;
+    }
+    .card:nth-child(1) .avatar-placeholder {
+      background: linear-gradient(135deg, #4c1d95, #7c3aed);
+      border-color: #a78bfa;
+      color: #ede9fe;
+    }
+    .card:nth-child(2) .avatar-placeholder {
+      background: linear-gradient(135deg, #1e3a5f, #2563eb);
+      border-color: #60a5fa;
+      color: #dbeafe;
+    }
+    .card:nth-child(3) .avatar-placeholder {
+      background: linear-gradient(135deg, #064e3b, #059669);
+      border-color: #34d399;
+      color: #d1fae5;
+    }
+
+    .speaker-info h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      line-height: 1.3;
+    }
+    .speaker-info .role {
+      font-size: 0.8rem;
+      margin-top: 4px;
+      color: #94a3b8;
+    }
+    .card:nth-child(1) .speaker-info h2 { color: #c4b5fd; }
+    .card:nth-child(2) .speaker-info h2 { color: #93c5fd; }
+    .card:nth-child(3) .speaker-info h2 { color: #6ee7b7; }
+
+    /* アーカイブリスト */
+    .archives {
+      padding: 20px 28px 28px;
+    }
+    .archives h3 {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: #64748b;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .archive-item {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+    .archive-item:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.15);
+    }
+
+    .archive-item .title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+    .archive-item .date {
+      font-size: 0.72rem;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+
+    .archive-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .btn-yt {
+      background: rgba(239,68,68,0.15);
+      border: 1px solid rgba(239,68,68,0.4);
+      color: #fca5a5;
+    }
+    .btn-yt:hover {
+      background: rgba(239,68,68,0.3);
+      border-color: #ef4444;
+    }
+    .btn-zoom {
+      background: rgba(59,130,246,0.15);
+      border: 1px solid rgba(59,130,246,0.4);
+      color: #93c5fd;
+    }
+    .btn-zoom:hover {
+      background: rgba(59,130,246,0.3);
+      border-color: #3b82f6;
+    }
+    .btn-site {
+      background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.4);
+      color: #c4b5fd;
+    }
+    .btn-site:hover {
+      background: rgba(99,102,241,0.3);
+      border-color: #6366f1;
+    }
+    .btn-member {
+      background: rgba(245,158,11,0.15);
+      border: 1px solid rgba(245,158,11,0.4);
+      color: #fcd34d;
+    }
+    .btn-member:hover {
+      background: rgba(245,158,11,0.3);
+      border-color: #f59e0b;
+    }
+    .btn-labo {
+      background: rgba(52,211,153,0.15);
+      border: 1px solid rgba(52,211,153,0.4);
+      color: #6ee7b7;
+    }
+    .btn-labo:hover {
+      background: rgba(52,211,153,0.3);
+      border-color: #34d399;
+    }
+    .btn-vimeo {
+      background: rgba(26,183,234,0.15);
+      border: 1px solid rgba(26,183,234,0.4);
+      color: #7dd3fc;
+    }
+    .btn-vimeo:hover {
+      background: rgba(26,183,234,0.3);
+      border-color: #1ab7ea;
+    }
+    .btn-doc {
+      background: rgba(100,116,139,0.15);
+      border: 1px solid rgba(100,116,139,0.4);
+      color: #cbd5e1;
+    }
+    .btn-doc:hover {
+      background: rgba(100,116,139,0.3);
+      border-color: #64748b;
+    }
+
+    .note {
+      font-size: 0.7rem;
+      color: #f59e0b;
+      margin-top: 6px;
+    }
+    .pass {
+      font-size: 0.7rem;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+    .pass code {
+      background: rgba(255,255,255,0.08);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      color: #fcd34d;
+    }
+
+    /* フッター */
+    footer {
+      text-align: center;
+      padding: 30px 20px 40px;
+      color: #475569;
+      font-size: 0.8rem;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📚 講座アーカイブ集</h1>
+  <p>越川慎司 ／ 池田朋弘（いけとも） ／ 佐藤勝彦 ／ うすたく（Michikusa）</p>
+</header>
+
+<main>
+  <section class="speakers">
+
+    <!-- ===== 越川慎司 ===== -->
+    <article class="card">
+      <div class="card-header">
+        <!-- 顔写真をお持ちの場合は下のimgタグのsrcを変更してください -->
+        <div class="avatar-placeholder">越</div>
+        <!--
+        <img class="avatar" src="koshikawa.jpg" alt="越川慎司">
+        -->
+        <div class="speaker-info">
+          <h2>越川 慎司</h2>
+          <div class="role">株式会社クロスリバー 代表<br>働き方改革・生産性向上の第一人者</div>
+        </div>
+      </div>
+      <div class="archives">
+        <h3>アーカイブ一覧</h3>
+
+        <div class="archive-item">
+          <div class="title">「一流の過ごし方」特別対談<br>プレゼンテーション協会イベント</div>
+          <div class="date">2025年3月10日開催</div>
+          <div class="archive-links">
+            <a class="btn btn-member" href="https://presen.or.jp/membership/" target="_blank">🔒 会員限定アーカイブ</a>
+          </div>
+          <div class="note">⚠️ プレゼンテーション協会 会員のみ視聴可能</div>
+        </div>
+
+        <div class="archive-item">
+          <div class="title">トップ5%社員のインプット・アウトプット術〈実践〉<br>flier book camp</div>
+          <div class="date">2025年2月開講</div>
+          <div class="archive-links">
+            <a class="btn btn-labo" href="https://labo.flierinc.com/groups/9627/password" target="_blank">📖 講座専用グループ</a>
+            <a class="btn btn-labo" href="https://labo.flierinc.com/contents/9ad08df7a3fe" target="_blank">▶ オンボーディング動画</a>
+          </div>
+          <div class="pass">🔑 グループPW: <code>t3ZxpgLn</code></div>
+        </div>
+
+        <div style="margin: 18px 0 10px; font-size:0.7rem; letter-spacing:0.1em; color:#64748b; text-transform:uppercase; font-weight:600;">── クロスリバー ラーニングトゥギャザー ──</div>
+
+        <div class="archive-item">
+          <div class="title">ルー大柴さんとリアルトゥギャザー in 日本橋</div>
+          <div class="date">2026年4月25日開催</div>
+          <div class="archive-links">
+            <a class="btn btn-vimeo" href="https://vimeo.com/1186917237/29489f7c5b?share=copy&fl=sv&fe=ci" target="_blank">▶ Vimeo動画</a>
+          </div>
+          <div class="note">⚠️ 申込者限定・URL共有厳禁</div>
+        </div>
+
+        <div class="archive-item">
+          <div class="title">自分軸キャリアを磨く５つの方法<br>ラーニングトゥギャザー</div>
+          <div class="date">2026年4月16日開催</div>
+          <div class="archive-links">
+            <a class="btn btn-vimeo" href="https://vimeo.com/1183751055/72a5467d9f?share=copy&fl=sv&fe=ci" target="_blank">▶ Vimeo動画</a>
+            <a class="btn btn-doc" href="https://peraichi.com/user_files/download/43cc0d20-1c1a-013f-86e3-0a58a9feac02" target="_blank">📄 資料PDF</a>
+          </div>
+        </div>
+
+        <div class="archive-item">
+          <div class="title">会議ファシリテーション術<br>ラーニングトゥギャザー</div>
+          <div class="date">2026年3月19日開催</div>
+          <div class="archive-links">
+            <a class="btn btn-vimeo" href="https://vimeo.com/1175332145/670d61da5a?share=copy&fl=sv&fe=ci" target="_blank">▶ Vimeo動画</a>
+            <a class="btn btn-doc" href="https://peraichi.com/user_files/download/39e25b20-05bc-013f-7f50-0a58a9feac02" target="_blank">📄 資料PDF</a>
+          </div>
+        </div>
+
+        <div class="archive-item">
+          <div class="title">軽井沢ラーニングトゥギャザー フォローアップZoom</div>
+          <div class="date">2025年12月4日開催</div>
+          <div class="archive-links">
+            <a class="btn btn-vimeo" href="https://vimeo.com/1143639932/e63be01229?share=copy&fl=sv&fe=ci" target="_blank">▶ Vimeo動画</a>
+            <a class="btn btn-doc" href="https://peraichi.com/user_files/download/727ce8b0-b33e-013e-e1c8-0a58a9feac02" target="_blank">📄 資料PDF</a>
+          </div>
+        </div>
+
+        <div class="archive-item">
+          <div class="title">軽井沢ラーニングトゥギャザー</div>
+          <div class="date">2025年11月8日開催</div>
+          <div class="archive-links">
+            <a class="btn btn-vimeo" href="https://vimeo.com/1137501497/f6169a89ff?share=copy&fl=sv&fe=ci" target="_blank">▶ Vimeo動画（臨場感版）</a>
+            <a class="btn btn-doc" href="https://peraichi.com/user_files/download/cd00d840-9f69-013e-1042-0a58a9feac02" target="_blank">📄 資料PPT</a>
+            <a class="btn btn-doc" href="https://peraichi.com/user_files/download/d15afd60-9f69-013e-1043-0a58a9feac02" target="_blank">📄 資料PDF</a>
+          </div>
+        </div>
+
+      </div>
+    </article>
+
+    <!-- ===== 池田朋弘（いけとも） ===== -->
+    <article class="card">
+      <div class="card-header">
+        <div class="avatar-placeholder">池</div>
+        <!--
+        <img class="avatar" src="iketomo.jpg" alt="池田朋弘（いけとも）">
+        -->
+        <div class="speaker-info">
+          <h2>池田 朋弘（いけとも）</h2>
+          <div class="role">株式会社Workstyle Evolution 代表<br>YouTubeチャンネル登録20万人超</div>
+        </div>
+      </div>
+      <div class="archives">
+        <h3>アーカイブ一覧</h3>
+
+        <div class="archive-item">
+          <div class="title">Agent Skillsワークショップ<br>「エージェントスキルで面倒作業を自動化」</div>
+          <div class="date">2026年4月9日開催</div>
+          <div class="archive-links">
+            <a class="btn btn-yt" href="https://www.youtube.com/watch?v=zQq938JZE" target="_blank">▶ 本編</a>
+            <a class="btn btn-yt" href="https://www.youtube.com/watch?v=5VHzRBCZW28" target="_blank">▶ 補足①MCP連携</a>
+            <a class="btn btn-yt" href="https://www.youtube.com/watch?v=gNR0dTFsRPc" target="_blank">▶ 補足②アイデア出し</a>
+          </div>
+        </div>
+
+        <div class="archive-item">
+          <div class="title">Nano Banana 2 × Google AI Studio<br>「1クリックで自分専用ツール制作」</div>
+          <div class="date">2026年3月21日開催</div>
+          <div class="archive-links">
+            <a class="btn btn-yt" href="https://www.youtube.com/watch?v=URqvl3mWc" target="_blank">▶ アーカイブ動画</a>
+          </div>
+        </div>
+
+        <div class="archive-item">
+          <div class="title">Excel自動化ワークショップ<br>「AIでExcelの面倒作業を1クリック化」</div>
+          <div class="date">2026年2月28日開催</div>
+          <div class="archive-links">
+            <a class="btn btn-yt" href="https://youtu.be/uaWoe9ggxnE" target="_blank">▶ アーカイブ動画</a>
+          </div>
+          <div class="note">⚠️ 参加者限定・外部共有はお控えください</div>
+        </div>
+
+      </div>
+    </article>
+
+    <!-- ===== 佐藤勝彦 ===== -->
+    <article class="card">
+      <div class="card-header">
+        <div class="avatar-placeholder">佐</div>
+        <!--
+        <img class="avatar" src="sato.jpg" alt="佐藤勝彦">
+        -->
+        <div class="speaker-info">
+          <h2>佐藤 勝彦</h2>
+          <div class="role">TANREN株式会社 代表取締役<br>ChatGPT・生成AI活用の先駆者</div>
+        </div>
+      </div>
+      <div class="archives">
+        <h3>アーカイブ一覧</h3>
+
+        <div class="archive-item">
+          <div class="title">第58回NRLフォーラム<br>「生成AIの現在とリテールでこれから起こること」</div>
+          <div class="date">2023年6月開催</div>
+          <div class="archive-links">
+            <a class="btn btn-zoom" href="https://us02web.zoom.us/rec/share/J1-rBor-jtVhRPCmwPpPa_aNvsnrfMBZUkW9WdcFqwQjkC1GzIRFW0s2vjQpS69O.IlODJ6Mw_E3c585J?startTime=1687427899000" target="_blank">▶ Zoom録画</a>
+          </div>
+          <div class="pass">🔑 パスコード: <code>Rak6X@fR</code></div>
+          <div class="note">⚠️ 視聴期限切れの可能性あり（元の期限: 2023年7月31日）</div>
+        </div>
+
+        <div class="archive-item">
+          <div class="title">GPT×TANRENギルド<br>「GPT-4がもたらす未来 × 地方創生」</div>
+          <div class="date">2023年5月開催</div>
+          <div class="archive-links">
+            <a class="btn btn-site" href="https://tanren.jp/seminar/05/archive" target="_blank">📋 アーカイブ申し込み</a>
+          </div>
+        </div>
+
+        <div class="archive-item">
+          <div class="title">MCPC第4回事例紹介セミナー<br>「ChatGPT革命！常識逸脱のAI活用法」</div>
+          <div class="date">2023年9月開催</div>
+          <div class="archive-links">
+            <a class="btn btn-site" href="https://tanren.jp/" target="_blank">🔗 TANRENサイトへ</a>
+          </div>
+        </div>
+
+      </div>
+    </article>
+
+
+    <!-- ===== うすたく（Michikusa） ===== -->
+    <article class="card">
+      <div class="card-header">
+        <div class="avatar-placeholder">臼</div>
+        <!--
+        <img class="avatar" src="usutaku.jpg" alt="うすたく（臼井拓水）">
+        -->
+        <div class="speaker-info">
+          <h2>うすたく（臼井 拓水）</h2>
+          <div class="role">Michikusa株式会社 代表<br>AI木曜会 主宰（会員4,000名超）</div>
+        </div>
+      </div>
+      <div class="archives">
+        <h3>アーカイブ一覧</h3>
+
+        <div class="archive-item">
+          <div class="title">Claude Code 入門編<br>（6時間 完全解説）</div>
+          <div class="date">2026年4月25日開催</div>
+          <div class="archive-links">
+            <a class="btn btn-zoom" href="https://us06web.zoom.us/rec/share/9bXxMWS_X-vJSt31W0iDAE9GPnGQAhNChDlNKpzG9lYObPdTgFEOosfDR-gykIpA.H_TZ6ROqPz7gpsEE" target="_blank">▶ Zoom録画</a>
+            <a class="btn btn-github" href="https://github.com/takpfive/claude-code-course-materials-2026-04/tree/main" target="_blank">📁 資料①（名刺・領収書・スキル）</a>
+            <a class="btn btn-github" href="https://github.com/rullerzhou-afk/clawd-on-desk" target="_blank">📁 資料②（Claudeキャラ召喚）</a>
+          </div>
+          <div class="pass">🔑 パスコード: <code>6@ac$tZw</code></div>
+        </div>
+
+        <div class="archive-item">
+          <div class="title">Claude Code 応用編</div>
+          <div class="date">2026年4月26日開催</div>
+          <div class="archive-links">
+            <a class="btn btn-zoom" href="https://us06web.zoom.us/rec/share/GkD3VBT0RhRo_0wgs6K0LofFRBL2rSx4SMDAsaQwsTgRT76KBDDsmoLKQRrL5ula.ZIPuuJv3CpJKDt2A" target="_blank">▶ Zoom録画</a>
+          </div>
+          <div class="pass">🔑 パスコード: <code>cV!^aE5N</code></div>
+        </div>
+
+      </div>
+    </article>
+
+  </section>
+</main>
+
+<footer>
+  <p>※ 顔写真は該当のjpgファイルをindex.htmlと同じフォルダに置き、コメントアウト箇所を切り替えてください。</p>
+  <p style="margin-top:8px;">© 2026 Archive Site. All rights reserved.</p>
+</footer>
+
+</body>
+</html>
